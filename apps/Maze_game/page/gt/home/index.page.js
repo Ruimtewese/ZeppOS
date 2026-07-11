@@ -1,13 +1,18 @@
 import * as hmUI from "@zos/ui";
-import { Accelerometer } from "@zos/sensor";
+import { Accelerometer, Vibrator, VIBRATOR_SCENE_SHORT_STRONG } from "@zos/sensor";
 
 const accel = new Accelerometer();
+const vibrator = new Vibrator();
 
 let player;
 
 let mazeWidgets = [];
 
 let complete = false;
+
+let completionBg;
+let completionText;
+let newMazeButton;
 
 
 // =================
@@ -26,6 +31,11 @@ const FINISH_COLOR = 0xff0000;
 
 const SCREEN_WIDTH = 390;
 const SCREEN_HEIGHT = 450;
+
+const COMPLETION_BG_COLOR = 0x101820;
+const COMPLETION_TEXT_COLOR = 0xffffff;
+const COMPLETION_BUTTON_COLOR = 0x0033aa;
+const COMPLETION_BUTTON_PRESS_COLOR = 0x0055dd;
 
 
 // =================
@@ -366,6 +376,172 @@ function move(dx,dy){
 // FINISH CHECK
 // =================
 
+function clearMazeWidgets(){
+
+  for(
+    let i=0;
+    i<mazeWidgets.length;
+    i++
+  ){
+
+    mazeWidgets[i].setProperty(
+      hmUI.prop.X,
+      -500
+    );
+
+    mazeWidgets[i].setProperty(
+      hmUI.prop.Y,
+      -500
+    );
+
+  }
+
+  mazeWidgets = [];
+
+}
+
+
+function hideCompletionScreen(){
+
+  if(completionBg){
+    completionBg.setProperty(
+      hmUI.prop.X,
+      -500
+    );
+
+    completionBg.setProperty(
+      hmUI.prop.Y,
+      -500
+    );
+  }
+
+  if(completionText){
+    completionText.setProperty(
+      hmUI.prop.X,
+      -500
+    );
+
+    completionText.setProperty(
+      hmUI.prop.Y,
+      -500
+    );
+  }
+
+  if(newMazeButton){
+    newMazeButton.setProperty(
+      hmUI.prop.X,
+      -500
+    );
+
+    newMazeButton.setProperty(
+      hmUI.prop.Y,
+      -500
+    );
+  }
+
+}
+
+
+function vibrateComplete(){
+
+  vibrator.setMode(VIBRATOR_SCENE_SHORT_STRONG);
+  vibrator.start();
+
+}
+
+
+function showCompletionScreen(){
+
+  if(!completionBg || !completionText || !newMazeButton)
+    return;
+
+
+  completionBg.setProperty(
+    hmUI.prop.X,
+    0
+  );
+
+  completionBg.setProperty(
+    hmUI.prop.Y,
+    0
+  );
+
+  completionBg.setProperty(
+    hmUI.prop.W,
+    SCREEN_WIDTH
+  );
+
+  completionBg.setProperty(
+    hmUI.prop.H,
+    SCREEN_HEIGHT
+  );
+
+
+  completionText.setProperty(
+    hmUI.prop.X,
+    100
+  );
+
+  completionText.setProperty(
+    hmUI.prop.Y,
+    175
+  );
+
+
+  newMazeButton.setProperty(
+    hmUI.prop.X,
+    95
+  );
+
+  newMazeButton.setProperty(
+    hmUI.prop.Y,
+    215
+  );
+
+}
+
+
+function resetMaze(){
+
+  complete = false;
+
+  hideCompletionScreen();
+
+  clearMazeWidgets();
+
+  createMaze();
+
+  generate(
+    START_X,
+    START_Y
+  );
+
+  drawMaze();
+
+  drawPoints();
+
+
+  playerX =
+    START_X*CELL+OFFSET_X+3;
+
+
+  playerY =
+    START_Y*CELL+OFFSET_Y+3;
+
+
+  player.setProperty(
+    hmUI.prop.X,
+    Math.round(playerX)
+  );
+
+  player.setProperty(
+    hmUI.prop.Y,
+    Math.round(playerY)
+  );
+
+}
+
+
 function checkFinish(){
 
 
@@ -386,6 +562,10 @@ function checkFinish(){
   ){
 
     complete=true;
+
+    clearMazeWidgets();
+    showCompletionScreen();
+    vibrateComplete();
 
     console.log("COMPLETE");
 
@@ -444,6 +624,57 @@ build(){
       }
     );
 
+
+
+  completionBg =
+    hmUI.createWidget(
+      hmUI.widget.FILL_RECT,
+      {
+        x:-500,
+        y:-500,
+        w:SCREEN_WIDTH,
+        h:SCREEN_HEIGHT,
+        color:COMPLETION_BG_COLOR
+      }
+    );
+
+
+  completionText =
+    hmUI.createWidget(
+      hmUI.widget.TEXT,
+      {
+        x:-500,
+        y:-500,
+        w:200,
+        h:40,
+        color:COMPLETION_TEXT_COLOR,
+        text:"Complete",
+        text_size:26,
+        align_h:hmUI.align.CENTER_H,
+        align_v:hmUI.align.CENTER_V
+      }
+    );
+
+
+  newMazeButton =
+    hmUI.createWidget(
+      hmUI.widget.BUTTON,
+      {
+        x:-500,
+        y:-500,
+        w:200,
+        h:40,
+        radius:8,
+        normal_color:COMPLETION_BUTTON_COLOR,
+        press_color:COMPLETION_BUTTON_PRESS_COLOR,
+        text:"New Maze",
+        text_size:22,
+        click_func:resetMaze
+      }
+    );
+
+
+  hideCompletionScreen();
 
 
   accel.onChange(()=>{

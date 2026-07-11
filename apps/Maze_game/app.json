@@ -2,16 +2,16 @@
   "configVersion": "v3",
   "app": {
     "appId": 22245,
-    "appName": "Test App v2",
+    "appName": "A-Maze-ing",
     "appType": "app",
     "package": "com.zepp.testappv2",
     "version": {
       "code": 1,
       "name": "1.0.1"
     },
-    "icon": "icon.png",
+    "icon": "image.png",
     "vender": "zepp",
-    "description": "test app"
+    "description": "A-Maze-ing"
   },
   "permissions": [
     "data:os.device.info",
@@ -53,7 +53,7 @@
   },
   "i18n": {
     "en-US": {
-      "appName": "Test App v2"
+      "appName": "A-Maze-ing"
     },
     "zh-CN": {
       "appName": "你好世界"

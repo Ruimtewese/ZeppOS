@@ -1,17 +1,17 @@
 {
   "configVersion": "v3",
   "app": {
-    "appId": 22242,
-    "appName": "Test App v1",
+    "appId": 22246,
+    "appName": "Flappy Bird",
     "appType": "app",
-    "package": "com.zepp.testappv1",
+    "package": "com.zepp.Flappy_Bird",
     "version": {
       "code": 1,
       "name": "1.0.1"
     },
-    "icon": "icon.png",
+    "icon": "image.png",
     "vender": "zepp",
-    "description": "test app"
+    "description": "Flappy Bird"
   },
   "permissions": [
     "data:os.device.info",
@@ -53,10 +53,10 @@
   },
   "i18n": {
     "en-US": {
-      "appName": "Test App v1"
+      "appName": "Flappy Bird"
     },
     "zh-CN": {
-      "appName": "你好世界"
+      "appName": "小鸟飞行"
     }
   },
   "defaultLanguage": "en-US"

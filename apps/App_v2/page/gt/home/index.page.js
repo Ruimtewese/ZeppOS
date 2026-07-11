@@ -5,59 +5,91 @@ const accel = new Accelerometer();
 
 let player;
 
+let mazeWidgets = [];
 
-// Screen
+let complete = false;
+
+
+// =================
+// COLORS
+// =================
+
+const WALL_COLOR = 0xffffff;
+const PLAYER_COLOR = 0xffff00;
+const START_COLOR = 0x00ff00;
+const FINISH_COLOR = 0xff0000;
+
+
+// =================
+// SCREEN
+// =================
+
 const SCREEN_WIDTH = 390;
 const SCREEN_HEIGHT = 450;
 
 
-// Maze
+// =================
+// MAZE
+// =================
+
 const CELL = 15;
 
 const COLS = 25;
 const ROWS = 29;
 
-const MAZE_WIDTH = COLS * CELL;
-const MAZE_HEIGHT = ROWS * CELL;
+
+const OFFSET_X =
+  Math.floor(
+    (SCREEN_WIDTH - COLS * CELL) / 2
+  );
 
 
-// Center maze
-const OFFSET_X = Math.floor((SCREEN_WIDTH - MAZE_WIDTH) / 2);
-const OFFSET_Y = Math.floor((SCREEN_HEIGHT - MAZE_HEIGHT) / 2);
+const OFFSET_Y =
+  Math.floor(
+    (SCREEN_HEIGHT - ROWS * CELL) / 2
+  );
 
 
-// Player
-const PLAYER_SIZE = 10;
-
-let playerX = OFFSET_X + CELL + 2;
-let playerY = OFFSET_Y + CELL + 2;
-
-const speed = 0.02;
-
-
-// Maze array
-let maze = [];
-
-
-// Start and finish (must be odd coordinates)
 const START_X = 1;
 const START_Y = 1;
 
-const FINISH_X = COLS - 2;
-const FINISH_Y = ROWS - 2;
+const END_X = COLS - 2;
+const END_Y = ROWS - 2;
 
 
 
-// Create walls
+let maze = [];
+
+
+// =================
+// PLAYER
+// =================
+
+const PLAYER_SIZE = 10;
+
+let playerX;
+let playerY;
+
+const SPEED = 0.03;
+
+
+
+// =================
+// MAZE GENERATION
+// =================
+
 function createMaze(){
 
-  for(let y = 0; y < ROWS; y++){
+  maze = [];
 
-    maze[y] = [];
 
-    for(let x = 0; x < COLS; x++){
+  for(let y=0;y<ROWS;y++){
 
-      maze[y][x] = 1;
+    maze[y]=[];
+
+    for(let x=0;x<COLS;x++){
+
+      maze[y][x]=1;
 
     }
 
@@ -67,13 +99,12 @@ function createMaze(){
 
 
 
-// Recursive backtracking
-function carve(x,y){
+function generate(x,y){
 
-  maze[y][x] = 0;
+  maze[y][x]=0;
 
 
-  let directions = [
+  let dirs=[
     [2,0],
     [-2,0],
     [0,2],
@@ -81,35 +112,28 @@ function carve(x,y){
   ];
 
 
-  // Randomize directions
-  directions.sort(
-    () => Math.random() - 0.5
+  dirs.sort(
+    ()=>Math.random()-0.5
   );
 
 
-  for(let i = 0; i < directions.length; i++){
+  for(let d of dirs){
 
-    const nx = x + directions[i][0];
-    const ny = y + directions[i][1];
+    let nx=x+d[0];
+    let ny=y+d[1];
 
 
     if(
-      nx > 0 &&
-      ny > 0 &&
-      nx < COLS - 1 &&
-      ny < ROWS - 1 &&
-      maze[ny][nx] === 1
+      nx>0 &&
+      ny>0 &&
+      nx<COLS-1 &&
+      ny<ROWS-1 &&
+      maze[ny][nx]==1
     ){
 
-      // Remove wall between cells
-      maze[
-        y + directions[i][1] / 2
-      ][
-        x + directions[i][0] / 2
-      ] = 0;
+      maze[y+d[1]/2][x+d[0]/2]=0;
 
-
-      carve(nx, ny);
+      generate(nx,ny);
 
     }
 
@@ -119,26 +143,34 @@ function carve(x,y){
 
 
 
-// Draw walls
+// =================
+// DRAW MAZE
+// =================
+
 function drawMaze(){
 
-  for(let y = 0; y < ROWS; y++){
+  for(let y=0;y<ROWS;y++){
 
-    for(let x = 0; x < COLS; x++){
+    for(let x=0;x<COLS;x++){
 
 
-      if(maze[y][x] === 1){
+      if(maze[y][x]==1){
 
+
+        let wall =
         hmUI.createWidget(
           hmUI.widget.FILL_RECT,
           {
-            x:x * CELL + OFFSET_X,
-            y:y * CELL + OFFSET_Y,
+            x:x*CELL+OFFSET_X,
+            y:y*CELL+OFFSET_Y,
             w:CELL,
             h:CELL,
-            color:0xffffff
+            color:WALL_COLOR
           }
         );
+
+
+        mazeWidgets.push(wall);
 
       }
 
@@ -150,145 +182,322 @@ function drawMaze(){
 
 
 
-// Draw start and finish
 function drawPoints(){
 
 
-  // Start green
-
+  let start =
   hmUI.createWidget(
     hmUI.widget.FILL_RECT,
     {
-      x:START_X * CELL + OFFSET_X + 3,
-      y:START_Y * CELL + OFFSET_Y + 3,
-      w:CELL - 6,
-      h:CELL - 6,
-      color:0x00ff00
+      x:START_X*CELL+OFFSET_X+3,
+      y:START_Y*CELL+OFFSET_Y+3,
+      w:CELL-6,
+      h:CELL-6,
+      color:START_COLOR
     }
   );
 
 
+  mazeWidgets.push(start);
 
-  // Finish red
 
+
+  let finish =
   hmUI.createWidget(
     hmUI.widget.FILL_RECT,
     {
-      x:FINISH_X * CELL + OFFSET_X + 3,
-      y:FINISH_Y * CELL + OFFSET_Y + 3,
-      w:CELL - 6,
-      h:CELL - 6,
-      color:0xff0000
+      x:END_X*CELL+OFFSET_X+3,
+      y:END_Y*CELL+OFFSET_Y+3,
+      w:CELL-6,
+      h:CELL-6,
+      color:FINISH_COLOR
     }
   );
+
+
+  mazeWidgets.push(finish);
 
 }
 
 
 
-Page({
+// =================
+// COLLISION
+// =================
 
-  build(){
-
-
-    hmUI.setStatusBarVisible(false);
-
+function canMove(x,y){
 
 
-    // Generate maze
+  let left =
+    Math.floor(
+      (x-OFFSET_X)/CELL
+    );
 
-    createMaze();
 
-    carve(
-      START_X,
-      START_Y
+  let right =
+    Math.floor(
+      (x+PLAYER_SIZE-OFFSET_X)/CELL
+    );
+
+
+  let top =
+    Math.floor(
+      (y-OFFSET_Y)/CELL
+    );
+
+
+  let bottom =
+    Math.floor(
+      (y+PLAYER_SIZE-OFFSET_Y)/CELL
     );
 
 
 
-    drawMaze();
+  for(
+    let yy=top;
+    yy<=bottom;
+    yy++
+  ){
 
-    drawPoints();
+    for(
+      let xx=left;
+      xx<=right;
+      xx++
+    ){
+
+
+      if(
+        xx<0 ||
+        yy<0 ||
+        xx>=COLS ||
+        yy>=ROWS
+      ){
+
+        return false;
+
+      }
+
+
+      if(
+        maze[yy][xx]==1
+      ){
+
+        return false;
+
+      }
+
+
+    }
+
+  }
+
+
+  return true;
+
+}
 
 
 
-    // Player
+// =================
+// MOVEMENT (ORIGINAL)
+// =================
 
-    player = hmUI.createWidget(
+function move(dx,dy){
+
+
+  let steps=Math.ceil(
+    Math.max(
+      Math.abs(dx),
+      Math.abs(dy)
+    )
+  );
+
+
+  if(steps<1)
+    steps=1;
+
+
+
+  dx/=steps;
+  dy/=steps;
+
+
+
+  for(
+    let i=0;
+    i<steps;
+    i++
+  ){
+
+
+    if(
+      canMove(
+        playerX+dx,
+        playerY
+      )
+    ){
+
+      playerX+=dx;
+
+    }
+
+
+
+    if(
+      canMove(
+        playerX,
+        playerY+dy
+      )
+    ){
+
+      playerY+=dy;
+
+    }
+
+
+  }
+
+
+}
+
+
+
+// =================
+// FINISH CHECK
+// =================
+
+function checkFinish(){
+
+
+  let fx =
+    END_X*CELL+OFFSET_X;
+
+
+  let fy =
+    END_Y*CELL+OFFSET_Y;
+
+
+
+  if(
+    playerX < fx+CELL &&
+    playerX+PLAYER_SIZE > fx &&
+    playerY < fy+CELL &&
+    playerY+PLAYER_SIZE > fy
+  ){
+
+    complete=true;
+
+    console.log("COMPLETE");
+
+  }
+
+}
+
+
+
+// =================
+// START
+// =================
+
+Page({
+
+build(){
+
+
+  hmUI.setStatusBarVisible(false);
+
+
+
+  createMaze();
+
+
+  generate(
+    START_X,
+    START_Y
+  );
+
+
+  drawMaze();
+
+  drawPoints();
+
+
+
+  playerX =
+    START_X*CELL+OFFSET_X+3;
+
+
+  playerY =
+    START_Y*CELL+OFFSET_Y+3;
+
+
+
+  player =
+    hmUI.createWidget(
       hmUI.widget.FILL_RECT,
       {
         x:playerX,
         y:playerY,
         w:PLAYER_SIZE,
         h:PLAYER_SIZE,
-        color:0x0000ff
+        color:PLAYER_COLOR
       }
     );
 
 
 
-    // Accelerometer movement
-
-    accel.onChange(()=>{
+  accel.onChange(()=>{
 
 
-      const data = accel.getCurrent();
-
-
-      const x = Math.round(data.x);
-      const y = Math.round(data.y);
+    if(complete)
+      return;
 
 
 
-      // Your corrected axis
-
-      playerX -= x * speed;
-      playerY += y * speed;
+    const data =
+      accel.getCurrent();
 
 
 
-      // Keep player in maze area
-
-      const minX = OFFSET_X;
-      const maxX = OFFSET_X + MAZE_WIDTH - PLAYER_SIZE;
-
-      const minY = OFFSET_Y;
-      const maxY = OFFSET_Y + MAZE_HEIGHT - PLAYER_SIZE;
+    const x =
+      Math.round(data.x);
 
 
-
-      playerX = Math.max(
-        minX,
-        Math.min(maxX, playerX)
-      );
-
-
-      playerY = Math.max(
-        minY,
-        Math.min(maxY, playerY)
-      );
+    const y =
+      Math.round(data.y);
 
 
 
-      player.setProperty(
-        hmUI.prop.X,
-        Math.round(playerX)
-      );
-
-
-      player.setProperty(
-        hmUI.prop.Y,
-        Math.round(playerY)
-      );
-
-
-    });
+    move(
+      -x*SPEED,
+      y*SPEED
+    );
 
 
 
-    accel.start();
+    player.setProperty(
+      hmUI.prop.X,
+      Math.round(playerX)
+    );
 
 
-  }
+    player.setProperty(
+      hmUI.prop.Y,
+      Math.round(playerY)
+    );
+
+
+
+    checkFinish();
+
+
+  });
+
+
+
+  accel.start();
+
+
+}
 
 });

@@ -1,0 +1,63 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 22245,
+    "appName": "Test App v2",
+    "appType": "app",
+    "package": "com.zepp.testappv2",
+    "version": {
+      "code": 1,
+      "name": "1.0.1"
+    },
+    "icon": "icon.png",
+    "vender": "zepp",
+    "description": "test app"
+  },
+  "permissions": [
+    "data:os.device.info",
+    "device:os.local_storage",
+    "device:os.accelerometer",
+    "device:os.gyroscope",
+    "data:user.hd.sleep"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "4.0"
+    }
+  },
+  "debug": false,
+  "targets": {
+    "gt": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/gt/home/index.page"
+          ]
+        },
+        "appSide": {
+          "path": "app-side/index"
+        }
+      },
+      "platforms": [
+        {
+          "st": "r"
+        },
+        {
+          "st": "s"
+        }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "Test App v2"
+    },
+    "zh-CN": {
+      "appName": "你好世界"
+    }
+  },
+  "defaultLanguage": "en-US"
+}

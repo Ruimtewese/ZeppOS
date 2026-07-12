@@ -522,3 +522,8 @@ function update(){
 
 setInterval(update,50);
 ```
+
+# Removes the default watch status bar
+```javascript
+    hmUI.setStatusBarVisible(false);
+```

@@ -1,4 +1,5 @@
 import * as hmUI from "@zos/ui";
+import { setPageBrightTime } from "@zos/display";
 import { Accelerometer, Vibrator, VIBRATOR_SCENE_SHORT_STRONG } from "@zos/sensor";
 
 const accel = new Accelerometer();
@@ -586,7 +587,9 @@ build(){
 
   hmUI.setStatusBarVisible(false);
 
-
+setPageBrightTime({
+    brightTime: 2147483000
+});
 
   createMaze();
 

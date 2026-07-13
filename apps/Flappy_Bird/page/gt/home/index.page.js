@@ -10,6 +10,14 @@ import { setInterval } from "@zos/timer";
 const WIDTH = 390;
 const HEIGHT = 450;
 
+// =====================
+// GROUND SETTINGS
+// =====================
+
+const GROUND_HEIGHT = 20;
+const GROUND_Y = HEIGHT - GROUND_HEIGHT;
+const GROUND_COLOR = 0x8B4513;
+
 
 // =====================
 // BIRD
@@ -49,7 +57,27 @@ const PIPE_DISTANCE = 180;
 
 let gameText;
 
-let gameRunning = true;
+let gameRunning = false;
+
+let gameStarted = false;
+
+// =====================
+// SCORE
+// =====================
+
+let score = 0;
+
+let scoreText;
+
+// =====================
+// DIFFICULTY
+// =====================
+
+let difficulty = 0;
+
+const MAX_SPEED = 6;
+const MIN_GAP = 90;
+const MIN_DISTANCE = 120;
 
 // =====================
 // CREATE PIPE
@@ -65,14 +93,15 @@ function createPipe(){
 
 
 
-    let topHeight =
-        gapY - PIPE_GAP / 2;
+let gap = getPipeGap();
 
 
+let topHeight =
+    gapY - gap / 2;
 
-    let bottomY =
-        gapY + PIPE_GAP / 2;
 
+let bottomY =
+    gapY + gap / 2;
 
 
     let top =
@@ -115,28 +144,163 @@ pipes.push({
 
     top:top,
 
-    bottom:bottom
+    bottom:bottom,
 
-});
+    passed:false
 
-}
+})};
 
 function gameOver(){
-
 
     gameRunning = false;
 
 
     gameText.setProperty(
         hmUI.prop.TEXT,
-        "GAME OVER\n\nPress Button"
+        "GAME OVER\n\nScore: "
+        + score +
+        "\n\nPress Button"
     );
-
 
 }
 
 
 
+
+// =====================
+// REMOVE OLD PIPES
+// =====================
+
+function removeOldPipes(){
+
+
+    for(let i = pipes.length - 1; i >= 0; i--){
+
+
+        if(pipes[i].x < -PIPE_WIDTH){
+
+
+            hmUI.deleteWidget(
+                pipes[i].top
+            );
+
+
+            hmUI.deleteWidget(
+                pipes[i].bottom
+            );
+
+
+            pipes.splice(
+                i,
+                1
+            );
+
+
+        }
+
+
+    }
+
+
+}
+
+
+// =====================
+// CLEAR PIPES
+// =====================
+
+function clearPipes(){
+
+
+    for(let p of pipes){
+
+
+        hmUI.deleteWidget(
+            p.top
+        );
+
+
+        hmUI.deleteWidget(
+            p.bottom
+        );
+
+
+    }
+
+
+    pipes = [];
+
+
+}
+
+// =====================
+// START GAME
+// =====================
+
+function startGame(){
+
+
+    clearPipes();
+
+
+    birdY = 200;
+
+    velocity = 0;
+
+    score = 0;
+
+
+
+    scoreText.setProperty(
+        hmUI.prop.TEXT,
+        "Score: 0"
+    );
+
+
+
+    gameText.setProperty(
+        hmUI.prop.TEXT,
+        ""
+    );
+
+
+
+    gameRunning = true;
+
+    gameStarted = true;
+
+
+}
+
+
+function getPipeSpeed(){
+
+    return Math.min(
+        MAX_SPEED,
+        PIPE_SPEED + score * 0.1
+    );
+
+}
+
+
+function getPipeGap(){
+
+    return Math.max(
+        MIN_GAP,
+        PIPE_GAP - score * 2
+    );
+
+}
+
+
+function getPipeDistance(){
+
+    return Math.max(
+        MIN_DISTANCE,
+        PIPE_DISTANCE - score * 2
+    );
+
+}
 
 Page({
 
@@ -164,6 +328,35 @@ build(){
     );
 
 
+// =====================
+// GROUND
+// =====================
+
+hmUI.createWidget(
+    hmUI.widget.FILL_RECT,
+    {
+        x:0,
+        y:GROUND_Y,
+        w:WIDTH,
+        h:GROUND_HEIGHT,
+        color:GROUND_COLOR
+    }
+);
+
+gameText =
+hmUI.createWidget(
+    hmUI.widget.TEXT,
+    {
+        x:40,
+        y:170,
+        w:310,
+        h:120,
+        text:"FLAPPY BIRD\n\nPress Top Button To Start",
+        text_size:20,
+        color:0xffffff,
+        align_h:hmUI.align.CENTER_H
+    }
+);
 
 
     // =====================
@@ -185,34 +378,27 @@ build(){
 
 
 
-
-    // =====================
-    // DEBUG TEXT
-    // =====================
-
-    gameText =
-    hmUI.createWidget(
-        hmUI.widget.TEXT,
-        {
-            x:20,
-            y:20,
-            w:300,
-            h:60,
-            text:"READY",
-            text_size:25,
-            color:0xffffff
-        }
-    );
+scoreText =
+hmUI.createWidget(
+    hmUI.widget.TEXT,
+    {
+        x:10,
+        y:70,
+        w:150,
+        h:40,
+        text:"Score: 0",
+        text_size:25,
+        color:0xffffff
+    }
+);
 
 
 
+ // =====================
+// BUTTON
+// =====================
 
-
-    // =====================
-    // BUTTON
-    // =====================
-
- onKey({
+onKey({
 
 callback:(key,event)=>{
 
@@ -225,23 +411,27 @@ callback:(key,event)=>{
     if(key === 36){
 
 
-        if(!gameRunning){
+        // START GAME
+        if(!gameStarted){
 
 
-            birdY = 200;
-
-            velocity = 0;
-
-            gameRunning = true;
-
-
-            gameText.setProperty(
-                hmUI.prop.TEXT,
-                "PLAYING"
-            );
+            startGame();
 
 
         }
+
+
+        // RESTART AFTER DEATH
+        else if(!gameRunning){
+
+
+            startGame();
+
+
+        }
+
+
+        // JUMP
         else{
 
 
@@ -260,8 +450,9 @@ callback:(key,event)=>{
 
 }
 
-
 });
+
+
 
 
 
@@ -293,7 +484,7 @@ if(birdY < 0){
 
 
 
-     if(birdY > 430){
+     if(birdY + 16 >= GROUND_Y){
 
     gameOver();
 
@@ -312,29 +503,57 @@ if(birdY < 0){
 
         // CREATE PIPES
 
-        if(
+    if(gameRunning){
 
-            pipes.length === 0 ||
 
-            pipes[pipes.length-1].x <
-            WIDTH - PIPE_DISTANCE
+    if(
 
-        ){
+        pipes.length === 0 ||
 
-            createPipe();
+        pipes[pipes.length-1].x <
+        WIDTH - getPipeDistance()
 
-        }
+    ){
 
+        createPipe();
+
+    }
+
+}
 
 
 
 
         // MOVE PIPES
 
-  for(let p of pipes){
+for(let p of pipes){
 
 
-    p.x -= PIPE_SPEED;
+    p.x -= getPipeSpeed();
+
+
+
+    // =====================
+    // SCORE
+    // =====================
+
+    if(
+        !p.passed &&
+        p.x + PIPE_WIDTH < 80
+    ){
+
+        p.passed = true;
+
+
+        score++;
+
+
+        scoreText.setProperty(
+            hmUI.prop.TEXT,
+            "Score: " + score
+        );
+
+    }
 
 
 
@@ -354,6 +573,9 @@ if(birdY < 0){
 
 }
 
+// remove pipes that left screen
+
+removeOldPipes();
 
 
 // =====================

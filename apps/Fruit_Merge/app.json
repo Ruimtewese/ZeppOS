@@ -1,0 +1,66 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 24756,
+    "appName": "Fruit_Merge",
+    "appType": "app",
+    "package": "com.zepp.Fruit_Merge",
+    "version": {
+      "code": 1,
+      "name": "1.0.1"
+    },
+    "icon": "image.png",
+    "vender": "zepp",
+    "description": "Fruit Merge Game"
+  },
+  "permissions": [
+    "data:os.device.info",
+    "device:os.local_storage",
+    "device:os.accelerometer",
+    "device:os.gyroscope",
+    "data:user.hd.sleep",
+    "sensor",
+    "device.storage",
+    "device.vibrate"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "4.0"
+    }
+  },
+  "debug": false,
+  "targets": {
+    "gt": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/gt/home/index.page"
+          ]
+        },
+        "appSide": {
+          "path": "app-side/index"
+        }
+      },
+      "platforms": [
+        {
+          "st": "r"
+        },
+        {
+          "st": "s"
+        }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "Fruit Merge"
+    },
+    "zh-CN": {
+      "appName": "水果合并"
+    }
+  },
+  "defaultLanguage": "en-US"
+}

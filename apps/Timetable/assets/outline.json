@@ -1,0 +1,35 @@
+{
+  "timetable": {
+    "timetableId": 0,
+    "schoolName": "",
+    "grade": "",
+    "lastUpdated": "",
+
+    "days": [
+      {
+        "id": 0,
+        "name": "",
+        "periods": [
+          {
+            "id": 0,
+            "start": "",
+            "end": "",
+            "subjectId": ""
+          }
+        ]
+      }
+    ],
+
+    "subjects": [
+      {
+        "id": "",
+        "longName": "",
+        "shortName": "",
+        "abbreviation": "",
+        "room": "",
+        "teacher": "",
+        "teacherAbbreviation": ""
+      }
+    ]
+  }
+}

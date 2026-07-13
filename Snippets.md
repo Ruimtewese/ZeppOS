@@ -607,3 +607,11 @@ onKey({
 });
 
 ```
+
+# Keep Screen On
+
+import { setPageBrightTime } from "@zos/display";
+
+setPageBrightTime({
+    brightTime: 2147483000
+});

@@ -1,889 +1,734 @@
 import * as hmUI from "@zos/ui";
 import { setInterval } from "@zos/timer";
+import { onKey } from "@zos/interaction";
+import { 
+    Vibrator,
+    VIBRATOR_SCENE_SHORT_LIGHT
+} from "@zos/sensor";
 
+// ======================================================
+// SCREEN
+// ======================================================
 
-// =====================
-// SCREEN SETTINGS
-// =====================
-
-// Size of the Amazfit Bip 6 screen
 const WIDTH = 390;
 const HEIGHT = 450;
 
+// ======================================================
+// PLAYER
+// ======================================================
 
-
-// =====================
-// PLAYER SETTINGS
-// =====================
-
-// Starting position of the player
-let playerX = 220;
+// Starting position
+let playerX = 90;
 let playerY = 410;
 
-// Size of the green player square
-const playerSize = 20;
+// Player size
+const PLAYER_SIZE = 18;
 
-
-// Current vertical movement speed
+// Physics
 let velocityY = 0;
-
-
-// Gravity strength
-// Higher value = faster falling
-const gravity = 0.8;
-
-
-// Force applied when gravity switches
-// Higher value = faster flip
-const flipForce = 9;
-
-
-// 1 = normal gravity (down)
-// -1 = reversed gravity (up)
 let gravityDirection = 1;
 
+const GRAVITY = 0.8;
+const FLIP_FORCE = 9;
 
-
-// =====================
-// GRAVITY COOLDOWN
-// =====================
-
-// Prevents the player from switching gravity repeatedly in mid-air
-let gravityCooldown = 0;
-
-
-// Time before gravity can switch again (milliseconds)
-const gravityCooldownTime = 500;
-
-
-
-// Stores the player graphic object
+// Player widget
 let player;
 
+// Vibration motor
+const vibrator = new Vibrator();
 
+// ======================================================
+// PLATFORMS
+// ======================================================
 
-// =====================
-// DIFFICULTY SETTINGS
-// =====================
+const FLOOR_Y = 410;
+const CEILING_Y = 20;
 
-// Maximum speed the game can reach
-// Stops the game becoming impossible
-const maxSpeed = 12;
-
-
-
-
-// =====================
-// PLATFORM SETTINGS
-// =====================
-
-// Position where the player lands on the floor
-const floorY = 410;
-
-
-// Position where the player lands on the ceiling
-const ceilingY = 20;
-
-
-// Stores the yellow platform graphics
 let floorPlatform;
 let ceilingPlatform;
 
+// ======================================================
+// GRAVITY COOLDOWN
+// ======================================================
 
+let gravityCooldown = 0;
+const GRAVITY_COOLDOWN = 300;
 
+// ======================================================
+// OBSTACLES
+// ======================================================
 
-// =====================
-// OBSTACLE SETTINGS
-// =====================
-
-// Array containing all active obstacles
 let obstacles = [];
 
+// Number of active obstacles
+const OBSTACLE_COUNT = 15;
 
-// Number of obstacles active in the game
-const obstacleCount = 15;
+// Width of every obstacle
+const OBSTACLE_WIDTH = 30;
 
+// Difficulty settings
+const START_SPEED = 5;
+const MAX_SPEED = 12;
 
-// Width of every red obstacle
-const obstacleWidth = 30;
+const START_MIN_SPACING = 180;
+const START_MAX_SPACING = 420;
 
+const MIN_SPACING_LIMIT = 120;
+const MAX_SPACING_LIMIT = 250;
 
-// Minimum distance between obstacles
-const minObstacleSpacing = 150;
+const START_MIN_HEIGHT = 50;
+const START_MAX_HEIGHT = 120;
+const MAX_HEIGHT_LIMIT = 220;
 
+// ======================================================
+// GAME
+// ======================================================
 
-// Maximum distance between obstacles
-const maxObstacleSpacing = 400;
-
-
-
-
-
-// =====================
-// GAME VARIABLES
-// =====================
-
-// Current score
 let score = 0;
 
-
-// Text displaying score
 let scoreText;
-
-
-// Text displaying game over message
 let gameText;
 
-
-// Controls if the game is running
 let gameRunning = true;
 
+// ======================================================
+// GAME FUNCTIONS
+// ======================================================
 
+// Current obstacle speed
+function getGameSpeed() {
 
+    return Math.min(
+        MAX_SPEED,
+        START_SPEED + score * 0.05
+    );
 
+}
 
-// =====================
-// MAIN APP START
-// =====================
+// Current minimum spacing
+function getMinSpacing() {
+
+    return Math.max(
+        MIN_SPACING_LIMIT,
+        START_MIN_SPACING - score * 2
+    );
+
+}
+
+// Current maximum spacing
+function getMaxSpacing() {
+
+    return Math.max(
+        MAX_SPACING_LIMIT,
+        START_MAX_SPACING - score * 2
+    );
+
+}
+
+// Current maximum obstacle height
+function getMaxObstacleHeight() {
+
+    return Math.min(
+        MAX_HEIGHT_LIMIT,
+        START_MAX_HEIGHT + score * 0.5
+    );
+
+}
+
+// ======================================================
+// MAIN PAGE
+// ======================================================
 
 Page({
 
-build(){
+build() {
 
-
-    // Removes the default watch status bar
+    // Hide the system status bar
     hmUI.setStatusBarVisible(false);
 
+    // ==================================================
+    // BACKGROUND
+    // ==================================================
 
+    hmUI.createWidget(
+        hmUI.widget.FILL_RECT,
+        {
+            x: 0,
+            y: 0,
+            w: WIDTH,
+            h: HEIGHT,
+            color: 0x000000
+        }
+    );
 
-// =====================
-// BACKGROUND
-// =====================
+    // ==================================================
+    // PLAYER
+    // ==================================================
 
-hmUI.createWidget(
-hmUI.widget.FILL_RECT,
-{
-x:0,
-y:0,
-w:WIDTH,
-h:HEIGHT,
-color:0x000000
-}
-);
+    player = hmUI.createWidget(
+        hmUI.widget.FILL_RECT,
+        {
+            x: playerX,
+            y: playerY,
+            w: PLAYER_SIZE,
+            h: PLAYER_SIZE,
+            color: 0x00FF00
+        }
+    );
 
+    // ==================================================
+    // CEILING PLATFORM
+    // ==================================================
 
+    ceilingPlatform = hmUI.createWidget(
+        hmUI.widget.FILL_RECT,
+        {
+            x: 0,
+            y: 0,
+            w: WIDTH,
+            h: 20,
+            color: 0xFFFF00
+        }
+    );
 
+    // ==================================================
+    // FLOOR PLATFORM
+    // ==================================================
 
-// =====================
-// TOUCH CONTROL
-// =====================
+    floorPlatform = hmUI.createWidget(
+        hmUI.widget.FILL_RECT,
+        {
+            x: 0,
+            y: 430,
+            w: WIDTH,
+            h: 20,
+            color: 0xFFFF00
+        }
+    );
 
-hmUI.createWidget(
-hmUI.widget.BUTTON,
-{
-x:0,
-y:0,
-w:WIDTH,
-h:HEIGHT,
+    // ==================================================
+    // SCORE
+    // ==================================================
 
-text:"",
+    scoreText = hmUI.createWidget(
+        hmUI.widget.TEXT,
+        {
+            x: 10,
+            y: 40,
+            w: 200,
+            h: 40,
+            text: "Score: 0",
+            text_size: 24,
+            color: 0xFFFFFF
+        }
+    );
 
-normal_color:0x000000,
-press_color:0x000000,
+    // ==================================================
+    // GAME OVER TEXT
+    // ==================================================
 
-alpha:0,
+    gameText = hmUI.createWidget(
+        hmUI.widget.TEXT,
+        {
+            x: 60,
+            y: 185,
+            w: 280,
+            h: 80,
+            text: "",
+            text_size: 30,
+            color: 0xFFFFFF
+        }
+    );
 
+    // ==================================================
+    // CREATE OBSTACLES
+    // ==================================================
 
-click_func(){
+    let nextX = WIDTH + 150;
 
+    for (let i = 0; i < OBSTACLE_COUNT; i++) {
 
-if(gameRunning){
+        createObstacle(nextX);
 
+        nextX +=
+            START_MIN_SPACING +
+            Math.random() *
+            (START_MAX_SPACING - START_MIN_SPACING);
 
-if(gravityCooldown <= 0){
+    }
 
-
-gravityDirection *= -1;
-
-
-velocityY =
-flipForce * gravityDirection;
-
-
-gravityCooldown =
-gravityCooldownTime;
-
-
-}
-
-
-}
-else{
-
-
-restart();
-
-
-}
-
-
-}
-
-}
-);
-
-
-
-
-
-
-// =====================
-// PLAYER
-// =====================
-
-player = hmUI.createWidget(
-hmUI.widget.FILL_RECT,
-{
-x:playerX,
-y:playerY,
-w:playerSize,
-h:playerSize,
-color:0x00ff00
-}
-);
-
-
-let gameSpeed =
-Math.min(maxSpeed, 5 + score * 0.05);
-
-
-
-// =====================
-// FLOOR PLATFORM
-// =====================
-
-floorPlatform = hmUI.createWidget(
-hmUI.widget.FILL_RECT,
-{
-x:0,
-y:430,
-w:WIDTH,
-h:20,
-color:0xffff00
-}
-);
-
-
-
-
-
+    // ==================================================
+    // PHYSICAL BUTTONS
+    // ==================================================
 
 // =====================
-// CEILING PLATFORM
+// PHYSICAL BUTTON CONTROL
 // =====================
 
-ceilingPlatform = hmUI.createWidget(
-hmUI.widget.FILL_RECT,
-{
-x:0,
-y:0,
-w:WIDTH,
-h:20,
-color:0xffff00
-}
-);
+onKey({
+
+    callback:(key,event)=>{
+
+if(key === 36 && event === 1){
+
+
+    if(gameRunning){
+
+
+        if(gravityCooldown <= 0){
+
+
+            gravityDirection *= -1;
+
+
+            velocityY =
+            FLIP_FORCE * gravityDirection;
+
+
+            gravityCooldown =
+            GRAVITY_COOLDOWN;
 
 
 
+        }
 
 
-
-// =====================
-// CREATE OBSTACLES
-// =====================
-
-for(let i=0;i<obstacleCount;i++){
-
-
-createObstacle(
-WIDTH + i * 250
-);
+    }
 
 
 }
 
 
 
+        if(key === 93 && event === 1){
+
+
+            if(!gameRunning){
+
+
+                restart();
+
+
+            }
+
+
+        }
 
 
 
-// =====================
-// SCORE
-// =====================
-
-scoreText = hmUI.createWidget(
-hmUI.widget.TEXT,
-{
-x:10,
-y:40,
-w:200,
-h:40,
-text:"Score: 0",
-text_size:25,
-color:0xffffff
-}
-);
+        return true;
 
 
+    }
+
+});
 
 
+    // ==================================================
+    // START GAME
+    // ==================================================
 
-
-// =====================
-// GAME OVER TEXT
-// =====================
-
-gameText = hmUI.createWidget(
-hmUI.widget.TEXT,
-{
-x:80,
-y:200,
-w:250,
-h:60,
-text:"",
-text_size:30,
-color:0xffffff
-}
-);
-
-
-
-startGame();
-
+    startGame();
 
 }
 
 });
 
-// =====================
-// CREATE RANDOM OBSTACLE
-// =====================
 
-function createObstacle(x){
+// ======================================================
+// CREATE OBSTACLE
+// ======================================================
 
+function createObstacle(x) {
 
-let height =
-50 + Math.random() * 120;
+    // Random height
+    let height =
+        START_MIN_HEIGHT +
+        Math.random() *
+        (START_MAX_HEIGHT - START_MIN_HEIGHT);
 
+    // Random side
+    let fromTop = Math.random() > 0.5;
 
-let fromTop =
-Math.random() > 0.5;
+    let y;
 
+    if (fromTop) {
 
-let y;
+        y = 20;
 
+    } else {
 
-if(fromTop){
+        y = 430 - height;
 
+    }
 
-y = 20;
+    // Create obstacle widget
+    let widget = hmUI.createWidget(
+        hmUI.widget.FILL_RECT,
+        {
+            x: x,
+            y: y,
+            w: OBSTACLE_WIDTH,
+            h: height,
+            color: 0xFF0000
+        }
+    );
 
+    obstacles.push({
 
-}
-else{
+        widget: widget,
 
+        x: x,
 
-y = 430 - height;
+        y: y,
 
+        height: height,
 
-}
+        fromTop: fromTop
 
-
-
-
-
-let widget = hmUI.createWidget(
-hmUI.widget.FILL_RECT,
-{
-x:x,
-y:y,
-w:obstacleWidth,
-h:height,
-color:0xff0000
-}
-);
-
-
-
-
-
-obstacles.push({
-
-widget:widget,
-
-x:x,
-
-y:y,
-
-height:height
-
-});
-
+    });
 
 }
 
+// ======================================================
+// RESPAWN OBSTACLE
+// ======================================================
 
-// =====================
+function respawnObstacle(obstacle) {
+
+    // Find the obstacle furthest to the right
+    let furthestX = WIDTH;
+
+    for (let i = 0; i < obstacles.length; i++) {
+
+        if (obstacles[i].x > furthestX) {
+
+            furthestX = obstacles[i].x;
+
+        }
+
+    }
+
+    // New spacing based on difficulty
+    obstacle.x =
+        furthestX +
+        getMinSpacing() +
+        Math.random() *
+        (getMaxSpacing() - getMinSpacing());
+
+    // New random height
+    obstacle.height =
+        START_MIN_HEIGHT +
+        Math.random() *
+        (getMaxObstacleHeight() - START_MIN_HEIGHT);
+
+    // Randomly choose ceiling or floor
+    obstacle.fromTop = Math.random() > 0.5;
+
+    if (obstacle.fromTop) {
+
+        obstacle.y = 20;
+
+    } else {
+
+        obstacle.y = 430 - obstacle.height;
+
+    }
+
+    // Update widget
+    obstacle.widget.setProperty(
+        hmUI.prop.X,
+        obstacle.x
+    );
+
+    obstacle.widget.setProperty(
+        hmUI.prop.Y,
+        obstacle.y
+    );
+
+    obstacle.widget.setProperty(
+        hmUI.prop.H,
+        obstacle.height
+    );
+
+    // Increase score
+    score++;
+
+    scoreText.setProperty(
+        hmUI.prop.TEXT,
+        "Score: " + score
+    );
+
+}
+
+
+
+// ======================================================
 // GAME LOOP
-// =====================
+// ======================================================
 
-function startGame(){
+function startGame() {
 
+    setInterval(() => {
 
-setInterval(()=>{
+        if (!gameRunning) {
+            return;
+        }
 
+        // ===============================================
+        // UPDATE COOLDOWN
+        // ===============================================
 
-if(!gameRunning){
+        gravityCooldown = Math.max(
+            0,
+            gravityCooldown - 20
+        );
 
-return;
+        // ===============================================
+        // APPLY GRAVITY
+        // ===============================================
+
+        velocityY +=
+            GRAVITY * gravityDirection;
+
+        playerY += velocityY;
+
+        // ===============================================
+        // PLATFORM COLLISION
+        // ===============================================
+
+        if (gravityDirection > 0) {
+
+            if (playerY >= FLOOR_Y) {
+
+                playerY = FLOOR_Y;
+                velocityY = 0;
+                gravityCooldown = 0;
+
+            }
+
+        } else {
+
+            if (playerY <= CEILING_Y) {
+
+                playerY = CEILING_Y;
+                velocityY = 0;
+                gravityCooldown = 0;
+
+            }
+
+        }
+
+        // ===============================================
+        // MOVE PLAYER
+        // ===============================================
+
+        player.setProperty(
+            hmUI.prop.X,
+            playerX
+        );
+
+        player.setProperty(
+            hmUI.prop.Y,
+            playerY
+        );
+
+        // ===============================================
+        // CURRENT GAME SPEED
+        // ===============================================
+
+        const speed =
+            getGameSpeed();
+
+        // ===============================================
+        // UPDATE OBSTACLES
+        // ===============================================
+
+        for (let i = 0; i < obstacles.length; i++) {
+
+            let obs = obstacles[i];
+
+            // Move obstacle left
+            obs.x -= speed;
+
+            // Respawn obstacle
+            if (obs.x < -OBSTACLE_WIDTH) {
+
+                respawnObstacle(obs);
+
+            }
+
+            // Collision
+            if (
+
+                playerX + PLAYER_SIZE > obs.x &&
+                playerX < obs.x + OBSTACLE_WIDTH &&
+                playerY + PLAYER_SIZE > obs.y &&
+                playerY < obs.y + obs.height
+
+            ) {
+
+                playerX = Math.max(
+                    -30,
+                    playerX - 25
+                );
+
+            }
+
+            // Update widget
+
+            obs.widget.setProperty(
+                hmUI.prop.X,
+                obs.x
+            );
+
+            obs.widget.setProperty(
+                hmUI.prop.Y,
+                obs.y
+            );
+
+            obs.widget.setProperty(
+                hmUI.prop.H,
+                obs.height
+            );
+
+        }
+
+        // ===============================================
+        // DEATH
+        // ===============================================
+
+        if (
+
+            playerX <= -PLAYER_SIZE ||
+            playerY < -10 ||
+            playerY > 430
+
+        ) {
+
+            gameOver();
+
+        }
+
+    }, 20);
 
 }
 
 
-
-
-
-// =====================
-// COOLDOWN TIMER
-// =====================
-
-if(gravityCooldown > 0){
-
-
-gravityCooldown -= 20;
-
-
-}
-
-
-
-
-
-
-// =====================
-// GRAVITY
-// =====================
-
-velocityY += gravity * gravityDirection;
-
-playerY += velocityY;
-
-
-
-
-
-
-// =====================
-// PLATFORM COLLISION
-// =====================
-
-if(playerY >= floorY){
-
-
-playerY = floorY;
-
-velocityY = 0;
-
-
-gravityCooldown = 0;
-
-
-}
-
-
-
-
-
-if(playerY <= ceilingY){
-
-
-playerY = ceilingY;
-
-velocityY = 0;
-
-
-gravityCooldown = 0;
-
-
-}
-
-
-
-
-
-
-
-
-// =====================
-// MOVE OBSTACLES
-// =====================
-
-for(let i=0;i<obstacles.length;i++){
-
-
-let obs = obstacles[i];
-
-
-
-let gameSpeed = 5 + score * 0.05;
-
-obs.x -= gameSpeed;
-
-
-
-
-
-
-// =====================
-// RESET OBSTACLE
-// =====================
-
-if(obs.x < -obstacleWidth){
-
-
-
-let furthest = 0;
-
-
-
-for(let j=0;j<obstacles.length;j++){
-
-
-if(obstacles[j].x > furthest){
-
-
-furthest = obstacles[j].x;
-
-
-}
-
-
-}
-
-
-
-
-
-
-let currentMinSpacing =
-Math.max(80, minObstacleSpacing - score * 2);
-
-let currentMaxSpacing =
-Math.max(150, maxObstacleSpacing - score * 2);
-
-
-obs.x =
-furthest +
-currentMinSpacing +
-Math.random() *
-(currentMaxSpacing-currentMinSpacing);
-
-
-
-
-
-
-
-let maxHeight =
-120 + score * 0.5;
-
-
-obs.height =
-50 + Math.random()*(maxHeight-50);
-
-
-
-
-
-if(Math.random() > 0.5){
-
-
-obs.y = 20;
-
-
-}
-else{
-
-
-obs.y = 430 - obs.height;
-
-
-}
-
-
-
-
-
-
-
-score++;
-
-
-scoreText.setProperty(
-hmUI.prop.TEXT,
-"Score: " + score
-);
-
-
-}
-
-
-
-
-
-
-
-
-
-// =====================
-// OBSTACLE COLLISION
-// =====================
-
-if(
-
-playerX + playerSize > obs.x &&
-
-playerX < obs.x + obstacleWidth &&
-
-playerY + playerSize > obs.y &&
-
-playerY < obs.y + obs.height
-
-){
-
-
-
-playerX -= 25;
-
-
-
-}
-
-
-
-
-
-
-
-// UPDATE OBSTACLE DISPLAY
-
-obs.widget.setProperty(
-hmUI.prop.X,
-obs.x
-);
-
-
-obs.widget.setProperty(
-hmUI.prop.Y,
-obs.y
-);
-
-
-obs.widget.setProperty(
-hmUI.prop.H,
-obs.height
-);
-
-
-
-}
-
-
-
-
-
-
-
-
-// =====================
-// UPDATE PLAYER
-// =====================
-
-player.setProperty(
-hmUI.prop.X,
-playerX
-);
-
-
-player.setProperty(
-hmUI.prop.Y,
-playerY
-);
-
-
-
-
-
-
-
-
-
-// =====================
-// DEATH
-// =====================
-
-if(
-
-playerX < -20 ||
-
-playerY < -10 ||
-
-playerY > 430
-
-){
-
-
-gameOver();
-
-
-}
-
-
-
-
-},20);
-
-
-}
-
-
-
-// =====================
+// ======================================================
 // GAME OVER
-// =====================
+// ======================================================
 
-function gameOver(){
+function gameOver() {
 
+    gameRunning = false;
 
-gameRunning = false;
-
-
-gameText.setProperty(
-hmUI.prop.TEXT,
-"GAME OVER\nTap"
-);
-
+    gameText.setProperty(
+        hmUI.prop.TEXT,
+        "GAME OVER\n\nBottom Button\nRestart"
+    );
 
 }
 
 
-
-
-
-
-
-
-// =====================
+// ======================================================
 // RESTART
-// =====================
+// ======================================================
 
-function restart(){
+function restart() {
 
+    // -----------------------------
+    // Reset game state
+    // -----------------------------
 
-playerX = 220;
+    gameRunning = true;
 
-playerY = 410;
+    score = 0;
 
+    gravityDirection = 1;
 
-velocityY = 0;
+    gravityCooldown = 0;
 
+    velocityY = 0;
 
-gravityDirection = 1;
+    playerX = 90;
+    playerY = FLOOR_Y;
 
+    // -----------------------------
+    // Update UI
+    // -----------------------------
 
-gravityCooldown = 0;
+    scoreText.setProperty(
+        hmUI.prop.TEXT,
+        "Score: 0"
+    );
 
+    gameText.setProperty(
+        hmUI.prop.TEXT,
+        ""
+    );
 
-score = 0;
+    player.setProperty(
+        hmUI.prop.X,
+        playerX
+    );
 
+    player.setProperty(
+        hmUI.prop.Y,
+        playerY
+    );
 
+    // -----------------------------
+    // Respawn obstacles
+    // -----------------------------
 
+    let nextX = WIDTH + 150;
 
+    for (let i = 0; i < obstacles.length; i++) {
 
-scoreText.setProperty(
-hmUI.prop.TEXT,
-"Score: 0"
-);
+        let obs = obstacles[i];
 
+        obs.height =
+            START_MIN_HEIGHT +
+            Math.random() *
+            (START_MAX_HEIGHT - START_MIN_HEIGHT);
 
+        obs.fromTop =
+            Math.random() > 0.5;
 
+        if (obs.fromTop) {
 
+            obs.y = 20;
 
-gameText.setProperty(
-hmUI.prop.TEXT,
-""
-);
+        } else {
 
+            obs.y =
+                430 - obs.height;
 
+        }
 
+        obs.x = nextX;
 
+        nextX +=
+            START_MIN_SPACING +
+            Math.random() *
+            (START_MAX_SPACING - START_MIN_SPACING);
 
+        obs.widget.setProperty(
+            hmUI.prop.X,
+            obs.x
+        );
 
-for(let i=0;i<obstacles.length;i++){
+        obs.widget.setProperty(
+            hmUI.prop.Y,
+            obs.y
+        );
 
+        obs.widget.setProperty(
+            hmUI.prop.H,
+            obs.height
+        );
 
-
-obstacles[i].x =
-WIDTH + i * 250;
-
-
-
-obstacles[i].height =
-50 + Math.random()*120;
-
-
-
-if(Math.random()>0.5){
-
-
-obstacles[i].y = 20;
-
-
-}
-else{
-
-
-obstacles[i].y = 430 - obstacles[i].height;
-
-
-}
-
-
-
-obstacles[i].widget.setProperty(
-hmUI.prop.X,
-obstacles[i].x
-);
-
-
-obstacles[i].widget.setProperty(
-hmUI.prop.Y,
-obstacles[i].y
-);
-
-
-obstacles[i].widget.setProperty(
-hmUI.prop.H,
-obstacles[i].height
-);
-
-
-
-}
-
-
-
-gameRunning = true;
-
+    }
 
 }

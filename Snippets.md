@@ -527,3 +527,83 @@ setInterval(update,50);
 ```javascript
     hmUI.setStatusBarVisible(false);
 ```
+
+# Button(Working!!!!)
+Detecting a screen tap
+
+```javascript
+
+hmUI.createWidget(
+    hmUI.widget.BUTTON,
+    {
+        x: 0,
+        y: 0,
+        w: 390,
+        h: 450,
+
+        text: "",
+
+        // Invisible button
+        alpha: 0,
+
+
+        // Runs when the screen is tapped
+        click_func(){
+
+            console.log("Screen tapped");
+
+            // Add your action here
+           
+
+        }
+    }
+);
+
+```
+
+
+# Pysical Button Pressed
+```javascript
+import { onKey } from "@zos/interaction";
+
+
+onKey({
+
+    callback:(key,event)=>{
+
+
+        if(event === 1){ // button click
+
+
+            if(key === 36){
+
+                // Top button pressed
+                // Example: flip gravity
+
+                gravityDirection *= -1;
+
+                velocityY =
+                flipForce * gravityDirection;
+
+            }
+
+
+
+            if(key === 93){
+
+                // Bottom button pressed
+                // Example: pause, jump, shoot, etc.
+
+            }
+
+
+        }
+
+
+        return true;
+
+    }
+
+});
+
+```

@@ -3,180 +3,258 @@ import { setPageBrightTime } from "@zos/display";
 import { setInterval } from "@zos/timer";
 import { onKey } from "@zos/interaction";
 
+
 Page({
-  build() {
+
+  build(){
+
 
     hmUI.setStatusBarVisible(false);
 
+
     setPageBrightTime({
-      brightTime: 2147483647
+      brightTime:2147483647
     });
 
-    // =====================
-    // SCREEN
-    // =====================
+
 
     const WIDTH = 390;
     const HEIGHT = 450;
 
-    const WALL_THICKNESS = 4;
+
 
     // =====================
-    // CONTAINER
+    // BOX
     // =====================
- 
-    const CONTAINER_Y = 50;
-    const CONTAINER_WIDTH = 280;
-    const CONTAINER_HEIGHT = 360;
-    const CONTAINER_X = (WIDTH - CONTAINER_WIDTH) / 2;
+
+    const WALL = 4;
+
+    const BOX_Y = 50;
+    const BOX_W = 280;
+    const BOX_H = 360;
+
+    const BOX_X =
+      (WIDTH - BOX_W) / 2;
+
+
+
 
     // =====================
     // BACKGROUND
     // =====================
 
-    hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: 0,
-      y: 0,
-      w: WIDTH,
-      h: HEIGHT,
-      color: 0x000000
-    });
+    hmUI.createWidget(
+      hmUI.widget.FILL_RECT,
+      {
+        x:0,
+        y:0,
+        w:WIDTH,
+        h:HEIGHT,
+        color:0x000000
+      }
+    );
+
+
+
 
     // =====================
-    // CONTAINER WALLS
+    // WALLS
     // =====================
 
-    hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: CONTAINER_X,
-      y: CONTAINER_Y,
-      w: WALL_THICKNESS,
-      h: CONTAINER_HEIGHT,
-      color: 0xFFFFFF
-    });
+    hmUI.createWidget(
+      hmUI.widget.FILL_RECT,
+      {
+        x:BOX_X,
+        y:BOX_Y,
+        w:WALL,
+        h:BOX_H,
+        color:0xffffff
+      }
+    );
 
-    hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: CONTAINER_X + CONTAINER_WIDTH - WALL_THICKNESS,
-      y: CONTAINER_Y,
-      w: WALL_THICKNESS,
-      h: CONTAINER_HEIGHT,
-      color: 0xFFFFFF
-    });
 
-    hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: CONTAINER_X,
-      y: CONTAINER_Y + CONTAINER_HEIGHT - WALL_THICKNESS,
-      w: CONTAINER_WIDTH,
-      h: WALL_THICKNESS,
-      color: 0xFFFFFF
-    });
+    hmUI.createWidget(
+      hmUI.widget.FILL_RECT,
+      {
+        x:BOX_X+BOX_W-WALL,
+        y:BOX_Y,
+        w:WALL,
+        h:BOX_H,
+        color:0xffffff
+      }
+    );
 
-    // =====================
-    // GAME OVER LINE
-    // =====================
 
-    hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: CONTAINER_X + WALL_THICKNESS,
-      y: CONTAINER_Y + 25,
-      w: CONTAINER_WIDTH - WALL_THICKNESS * 2,
-      h: 2,
-      color: 0xFF4444
-    });
+    hmUI.createWidget(
+      hmUI.widget.FILL_RECT,
+      {
+        x:BOX_X,
+        y:BOX_Y+BOX_H-WALL,
+        w:BOX_W,
+        h:WALL,
+        color:0xffffff
+      }
+    );
+
+
+
+
 
     // =====================
     // FRUIT
     // =====================
 
-    const FRUIT_SIZE = 35;
-    const MOVE_SPEED = 8;
+    const SIZE = 35;
+
+    const GRAVITY = 0.5;
+
 
     let fruitX =
-      CONTAINER_X +
-      (CONTAINER_WIDTH - FRUIT_SIZE) / 2;
+      BOX_X+(BOX_W-SIZE)/2;
 
-    let fruitY = CONTAINER_Y + 8;
+
+    let fruitY =
+      BOX_Y+8;
+
 
     let velocityY = 0;
-    const GRAVITY = 0.5;
+
 
     let dropped = false;
 
-    const fruit = hmUI.createWidget(
-      hmUI.widget.FILL_RECT,
+
+
+
+    function createFruit(){
+
+
+      return hmUI.createWidget(
+        hmUI.widget.FILL_RECT,
+        {
+          x:fruitX,
+          y:fruitY,
+          w:SIZE,
+          h:SIZE,
+          radius:SIZE/2,
+          color:0xff0000
+        }
+      );
+
+
+    }
+
+
+
+    let fruit = createFruit();
+
+
+
+
+
+    // =====================
+    // TEST BUTTONS
+    // =====================
+
+
+    hmUI.createWidget(
+      hmUI.widget.BUTTON,
       {
-        x: fruitX,
-        y: fruitY,
-        w: FRUIT_SIZE,
-        h: FRUIT_SIZE,
-        radius: FRUIT_SIZE / 2,
-        color: 0xff0000
+        x:0,
+        y:0,
+        w:120,
+        h:60,
+
+        text:"LEFT",
+
+        color:0x555555,
+
+
+        click_func(){
+
+
+          console.log("LEFT");
+
+
+          if(!dropped){
+
+
+            fruitX -= 25;
+
+
+          }
+
+
+        }
+
       }
     );
 
+
+
+
+    hmUI.createWidget(
+      hmUI.widget.BUTTON,
+      {
+        x:270,
+        y:0,
+        w:120,
+        h:60,
+
+        text:"RIGHT",
+
+        color:0x555555,
+
+
+        click_func(){
+
+
+          console.log("RIGHT");
+
+
+          if(!dropped){
+
+
+            fruitX += 25;
+
+
+          }
+
+
+        }
+
+      }
+    );
+
+        // =====================
+    // DROP BUTTON
     // =====================
-    // TOUCH CONTROL
-    // =====================
 
-    hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: CONTAINER_X,
-      y: 0,
-      w: CONTAINER_WIDTH,
-      h: CONTAINER_Y,
-      color: 0x000000,
-      alpha: 1
-    }).addEventListener(hmUI.event.MOVE, (info) => {
-
-      if (dropped) return;
-
-      fruitX = info.x - FRUIT_SIZE / 2;
-
-      const minX =
-        CONTAINER_X + WALL_THICKNESS;
-
-      const maxX =
-        CONTAINER_X +
-        CONTAINER_WIDTH -
-        WALL_THICKNESS -
-        FRUIT_SIZE;
-
-      if (fruitX < minX) fruitX = minX;
-      if (fruitX > maxX) fruitX = maxX;
-
-      fruit.setProperty(hmUI.prop.MORE, {
-        x: fruitX,
-        y: fruitY
-      });
-
-    });
-
-    // =====================
-    // HARDWARE BUTTONS
-    // =====================
 
     onKey({
 
-      callback: (key, event) => {
+      callback:(key,event)=>{
 
-        if (event === 1) {
 
-          // TOP BUTTON
+        if(event === 1){
 
-          if (key === 36) {
 
-            if (!dropped) {
+          if(key === 36){
+
+
+            if(!dropped){
+
 
               dropped = true;
 
+
             }
 
-          }
-
-          // BOTTOM BUTTON
-
-          if (key === 93) {
 
           }
+
 
         }
+
 
         return true;
 
@@ -184,68 +262,106 @@ Page({
 
     });
 
-        // =====================
+
+
+
+
+
+    // =====================
     // GAME LOOP
     // =====================
 
-    setInterval(() => {
 
-      // Move fruit while waiting to drop
-      if (!dropped) {
+    setInterval(()=>{
 
-        fruitY = CONTAINER_Y + 8;
 
-      }
 
-      // Falling physics
-      if (dropped) {
+      if(dropped){
+
 
         velocityY += GRAVITY;
+
+
         fruitY += velocityY;
 
-        // Floor collision
-        const floor =
-          CONTAINER_Y +
-          CONTAINER_HEIGHT -
-          WALL_THICKNESS -
-          FRUIT_SIZE;
 
-        if (fruitY >= floor) {
+
+        const floor =
+
+          BOX_Y +
+          BOX_H -
+          WALL -
+          SIZE;
+
+
+
+
+        if(fruitY >= floor){
+
 
           fruitY = floor;
+
+
           velocityY = 0;
 
-          // Fruit has landed
+
           dropped = false;
 
-          // Spawn a new fruit at the top
-          fruitY = CONTAINER_Y + 8;
-          velocityY = 0;
+
+
+          fruit = createFruit();
+
 
         }
 
+
       }
 
-      // Keep fruit inside container horizontally
+
+
+
+
+      // limit movement
+
       const minX =
-        CONTAINER_X + WALL_THICKNESS;
+        BOX_X + WALL;
+
 
       const maxX =
-        CONTAINER_X +
-        CONTAINER_WIDTH -
-        WALL_THICKNESS -
-        FRUIT_SIZE;
+        BOX_X +
+        BOX_W -
+        WALL -
+        SIZE;
 
-      if (fruitX < minX) fruitX = minX;
-      if (fruitX > maxX) fruitX = maxX;
 
-      // Update fruit position
-      fruit.setProperty(hmUI.prop.MORE, {
-        x: fruitX,
-        y: fruitY
-      });
 
-    }, 20);
+      if(fruitX < minX)
+        fruitX = minX;
+
+
+
+      if(fruitX > maxX)
+        fruitX = maxX;
+
+
+
+
+      fruit.setProperty(
+
+        hmUI.prop.MORE,
+
+        {
+          x:fruitX,
+          y:fruitY
+        }
+
+      );
+
+
+
+    },20);
+
+
 
   }
 

@@ -1,6 +1,7 @@
 import * as hmUI from "@zos/ui";
 import { setPageBrightTime } from "@zos/display";
 import { setInterval } from "@zos/timer";
+import { onKey } from "@zos/interaction";
 
 Page({
   build() {
@@ -11,7 +12,6 @@ Page({
       brightTime: 2147483647
     });
 
-
     // =====================
     // SCREEN
     // =====================
@@ -21,12 +21,10 @@ Page({
 
     const WALL_THICKNESS = 4;
 
-
     // =====================
     // CONTAINER
     // =====================
-
-    
+ 
     const CONTAINER_Y = 50;
     const CONTAINER_WIDTH = 280;
     const CONTAINER_HEIGHT = 360;
@@ -44,7 +42,6 @@ Page({
       color: 0x000000
     });
 
-
     // =====================
     // CONTAINER WALLS
     // =====================
@@ -57,7 +54,6 @@ Page({
       color: 0xFFFFFF
     });
 
-
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: CONTAINER_X + CONTAINER_WIDTH - WALL_THICKNESS,
       y: CONTAINER_Y,
@@ -66,7 +62,6 @@ Page({
       color: 0xFFFFFF
     });
 
-
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: CONTAINER_X,
       y: CONTAINER_Y + CONTAINER_HEIGHT - WALL_THICKNESS,
@@ -74,7 +69,6 @@ Page({
       h: WALL_THICKNESS,
       color: 0xFFFFFF
     });
-
 
     // =====================
     // GAME OVER LINE
@@ -88,74 +82,171 @@ Page({
       color: 0xFF4444
     });
 
-
     // =====================
     // FRUIT
     // =====================
 
     const FRUIT_SIZE = 35;
+    const MOVE_SPEED = 8;
 
-    let fruitX = CONTAINER_X + (CONTAINER_WIDTH - FRUIT_SIZE) / 2;
-    let fruitY = CONTAINER_Y - 20;
+    let fruitX =
+      CONTAINER_X +
+      (CONTAINER_WIDTH - FRUIT_SIZE) / 2;
+
+    let fruitY = CONTAINER_Y + 8;
 
     let velocityY = 0;
     const GRAVITY = 0.5;
 
     let dropped = false;
 
-
-    const fruit = hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: fruitX,
-      y: fruitY,
-      w: FRUIT_SIZE,
-      h: FRUIT_SIZE,
-      radius: FRUIT_SIZE / 2,
-      color: 0xff0000
-    });
-
-hmUI.createWidget(hmUI.widget.BUTTON, {
-  x: (WIDTH - 100) / 2,
-  y: CONTAINER_Y + CONTAINER_HEIGHT + 10,
-  w: 100,
-  h: 20,
-  text: "DROP",
-  text_size: 20,
-  color: 0xffffff,
-  normal_color: 0x444444,
-  press_color: 0x888888
-}).addEventListener(hmUI.event.CLICK_DOWN, () => {
-
-  dropped = true;
-
-});
+    const fruit = hmUI.createWidget(
+      hmUI.widget.FILL_RECT,
+      {
+        x: fruitX,
+        y: fruitY,
+        w: FRUIT_SIZE,
+        h: FRUIT_SIZE,
+        radius: FRUIT_SIZE / 2,
+        color: 0xff0000
+      }
+    );
 
     // =====================
+    // TOUCH CONTROL
+    // =====================
+
+    hmUI.createWidget(hmUI.widget.FILL_RECT, {
+      x: CONTAINER_X,
+      y: 0,
+      w: CONTAINER_WIDTH,
+      h: CONTAINER_Y,
+      color: 0x000000,
+      alpha: 1
+    }).addEventListener(hmUI.event.MOVE, (info) => {
+
+      if (dropped) return;
+
+      fruitX = info.x - FRUIT_SIZE / 2;
+
+      const minX =
+        CONTAINER_X + WALL_THICKNESS;
+
+      const maxX =
+        CONTAINER_X +
+        CONTAINER_WIDTH -
+        WALL_THICKNESS -
+        FRUIT_SIZE;
+
+      if (fruitX < minX) fruitX = minX;
+      if (fruitX > maxX) fruitX = maxX;
+
+      fruit.setProperty(hmUI.prop.MORE, {
+        x: fruitX,
+        y: fruitY
+      });
+
+    });
+
+    // =====================
+    // HARDWARE BUTTONS
+    // =====================
+
+    onKey({
+
+      callback: (key, event) => {
+
+        if (event === 1) {
+
+          // TOP BUTTON
+
+          if (key === 36) {
+
+            if (!dropped) {
+
+              dropped = true;
+
+            }
+
+          }
+
+          // BOTTOM BUTTON
+
+          if (key === 93) {
+
+          }
+
+        }
+
+        return true;
+
+      }
+
+    });
+
+        // =====================
     // GAME LOOP
     // =====================
 
-setInterval(() => {
+    setInterval(() => {
 
-  if (dropped) {
+      // Move fruit while waiting to drop
+      if (!dropped) {
 
-    velocityY += GRAVITY;
-    fruitY += velocityY;
+        fruitY = CONTAINER_Y + 8;
 
-    // Floor collision
-    const floor = CONTAINER_Y + CONTAINER_HEIGHT - WALL_THICKNESS - FRUIT_SIZE;
+      }
 
-    if (fruitY >= floor) {
-      fruitY = floor;
-      velocityY = 0;
-    }
+      // Falling physics
+      if (dropped) {
+
+        velocityY += GRAVITY;
+        fruitY += velocityY;
+
+        // Floor collision
+        const floor =
+          CONTAINER_Y +
+          CONTAINER_HEIGHT -
+          WALL_THICKNESS -
+          FRUIT_SIZE;
+
+        if (fruitY >= floor) {
+
+          fruitY = floor;
+          velocityY = 0;
+
+          // Fruit has landed
+          dropped = false;
+
+          // Spawn a new fruit at the top
+          fruitY = CONTAINER_Y + 8;
+          velocityY = 0;
+
+        }
+
+      }
+
+      // Keep fruit inside container horizontally
+      const minX =
+        CONTAINER_X + WALL_THICKNESS;
+
+      const maxX =
+        CONTAINER_X +
+        CONTAINER_WIDTH -
+        WALL_THICKNESS -
+        FRUIT_SIZE;
+
+      if (fruitX < minX) fruitX = minX;
+      if (fruitX > maxX) fruitX = maxX;
+
+      // Update fruit position
+      fruit.setProperty(hmUI.prop.MORE, {
+        x: fruitX,
+        y: fruitY
+      });
+
+    }, 20);
 
   }
 
-
-  fruit.setProperty(hmUI.prop.MORE, {
-    x: fruitX,
-    y: fruitY
-  });
-
-
-}, 20);
-}});
+});

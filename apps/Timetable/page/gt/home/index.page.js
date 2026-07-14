@@ -1,38 +1,61 @@
 import * as hmUI from "@zos/ui";
 import { onKey } from "@zos/interaction";
+import { setInterval } from "@zos/timer";
 
 import timetableData from "../../../assets/timetable.js";
 
 
-// =====================
+// =====================================================
 // DATA
-// =====================
+// =====================================================
 
 let timetable = timetableData;
 
 
-// =====================
+// =====================================================
 // DEBUG
-// =====================
+// =====================================================
 
-const DEBUG_MODE = true;
-const DEBUG_TIME = "10:30";
+const DEBUG_MODE = false;
+const DEBUG_TIME = "09:38";
 
 
-// =====================
+// =====================================================
 // DISPLAY SETTINGS
-// =====================
+// =====================================================
 
-const SHOW_ROOM = false;
+const SHOW_ROOM = true;
 const SHOW_TEACHER = false;
 const SHOW_TIME = true;
 const SHOW_ABBREVIATION = true;
 const SHOW_NEXT_LESSON = true;
 
 
-// =====================
+// =====================================================
+// COLORS
+// =====================================================
+
+const COLOR_BG = 0x000000;
+const COLOR_CARD = 0x202020;
+const COLOR_ACCENT = 0x4DA3FF;
+const COLOR_GREEN = 0x00C853;
+const COLOR_ORANGE = 0xFF9800;
+const COLOR_RED = 0xF44336;
+const COLOR_TEXT = 0xFFFFFF;
+const COLOR_GREY = 0xAAAAAA;
+
+
+// =====================================================
+// SCREEN
+// =====================================================
+
+const WIDTH = 390;
+const HEIGHT = 450;
+
+
+// =====================================================
 // VARIABLES
-// =====================
+// =====================================================
 
 let widgets = [];
 
@@ -40,11 +63,12 @@ let selectedDay = null;
 
 let screen = "days";
 
+let refreshTimer = null;
 
 
-// =====================
+// =====================================================
 // PAGE
-// =====================
+// =====================================================
 
 Page({
 
@@ -54,15 +78,26 @@ Page({
 
     showDaySelection();
 
+
+    refreshTimer = setInterval(()=>{
+
+      if(screen === "lesson"){
+
+        showSelectedDay();
+
+      }
+
+    },60000);
+
+
   }
 
 });
 
 
-
-// =====================
+// =====================================================
 // CLEAR SCREEN
-// =====================
+// =====================================================
 
 function clearScreen(){
 
@@ -73,21 +108,21 @@ function clearScreen(){
   });
 
 
-  widgets=[];
+  widgets = [];
 
 }
 
 
-
-// =====================
+// =====================================================
 // RECTANGLE
-// =====================
+// =====================================================
 
 function createRectangle(
 x,
 y,
 w,
-h
+h,
+color = COLOR_CARD
 ){
 
 
@@ -99,32 +134,32 @@ h
     {
 
       x:x,
-
       y:y,
 
       w:w,
-
       h:h,
 
-      color:0x202020,
+      color:color,
 
-      radius:12
+      radius:10
 
     }
 
   );
 
-
+ 
   widgets.push(widget);
 
+
+  return widget;
 
 }
 
 
 
-// =====================
+// =====================================================
 // TEXT
-// =====================
+// =====================================================
 
 function createText(
 text,
@@ -132,7 +167,8 @@ x,
 y,
 w,
 h,
-size
+size,
+color = COLOR_TEXT
 ){
 
 
@@ -144,18 +180,16 @@ size
     {
 
       x:x,
-
       y:y,
 
       w:w,
-
       h:h,
 
       text:text,
 
       text_size:size,
 
-      color:0xffffff,
+      color:color,
 
 
       align_h:
@@ -173,39 +207,138 @@ size
   widgets.push(widget);
 
 
+  return widget;
+
 }
 
 
 
-// =====================
-// DAY SELECT
-// =====================
+// =====================================================
+// ACCENT LINE
+// =====================================================
+
+function createAccentLine(
+y,
+color = COLOR_ACCENT
+){
+
+
+  createRectangle(
+
+    25,
+
+    y,
+
+    340,
+
+    5,
+
+    color
+
+  );
+
+
+}
+
+
+
+// =====================================================
+// BADGE
+// =====================================================
+
+function createBadge(
+text,
+x,
+y,
+w
+){
+
+
+  createRectangle(
+
+    x,
+
+    y,
+
+    w,
+
+    35,
+
+    0x303030
+
+  );
+
+
+  createText(
+
+    text,
+
+    x,
+
+    y+3,
+
+    w,
+
+    30,
+
+    16
+
+  );
+
+
+}
+
+
+
+// =====================================================
+// TIME DEBUG
+// =====================================================
+
+function getCurrentMinutes(){
+
+
+  if(DEBUG_MODE){
+
+    return toMinutes(DEBUG_TIME);
+
+  }
+
+
+  let now = new Date();
+
+
+  return (
+
+    now.getHours()*60
+
+    +
+
+    now.getMinutes()
+
+  );
+
+
+}
+
+// =====================================================
+// DAY SELECT SCREEN
+// =====================================================
 
 function showDaySelection(){
 
-
   clearScreen();
-
 
   screen="days";
 
 
   createText(
-
     "Select Day",
-
     20,
-
     20,
-
     350,
-
     40,
-
     28
-
   );
-
 
 
   timetable.timetable.days.forEach(
@@ -220,24 +353,23 @@ function showDaySelection(){
 
       {
 
-        x:45,
+        x:40,
 
         y:80+(index*42),
 
-        w:300,
+        w:310,
 
         h:35,
-
 
         text:day.name,
 
 
-        normal_color:0x333333,
+        normal_color:0x303030,
 
-        press_color:0x666666,
+        press_color:0x4DA3FF,
 
 
-        radius:8,
+        radius:12,
 
 
         click_func:()=>{
@@ -249,7 +381,6 @@ function showDaySelection(){
 
 
         }
-
 
       }
 
@@ -266,9 +397,9 @@ function showDaySelection(){
 
 
 
-// =====================
-// LESSON SCREEN
-// =====================
+// =====================================================
+// MAIN LESSON SCREEN
+// =====================================================
 
 function showSelectedDay(){
 
@@ -279,14 +410,13 @@ function showSelectedDay(){
   screen="lesson";
 
 
-
   createText(
 
     selectedDay.name,
 
     20,
 
-    10,
+    5,
 
     350,
 
@@ -298,32 +428,8 @@ function showSelectedDay(){
 
 
 
-  let currentMinutes;
-
-
-
-  if(DEBUG_MODE){
-
-
-    currentMinutes =
-    toMinutes(DEBUG_TIME);
-
-
-  }
-
-  else{
-
-
-    let now =
-    new Date();
-
-
-    currentMinutes =
-    now.getHours()*60+
-    now.getMinutes();
-
-
-  }
+  let currentMinutes =
+  getCurrentMinutes();
 
 
 
@@ -338,33 +444,33 @@ function showSelectedDay(){
 
   periods.forEach(
 
-  (period,index)=>{
+    (period,index)=>{
 
 
-    if(
+      if(
 
-      currentMinutes >=
-      toMinutes(period.start)
+        currentMinutes >=
+        toMinutes(period.start)
 
-      &&
+        &&
 
-      currentMinutes <
-      toMinutes(period.end)
+        currentMinutes <
+        toMinutes(period.end)
 
-    ){
+      ){
 
+        currentIndex=index;
 
-      currentIndex=index;
+      }
 
 
     }
 
-
-  });
-
+  );
 
 
-  // FINISHED
+
+  // SCHOOL FINISHED
 
   if(
 
@@ -376,38 +482,16 @@ function showSelectedDay(){
   ){
 
 
-    createRectangle(
-      15,
-      80,
-      360,
-      120
-    );
-
-
-    createText(
-
-      "School Finished",
-
-      20,
-
-      120,
-
-      350,
-
-      50,
-
-      26
-
-    );
-
+    drawFinished();
 
     return;
+
 
   }
 
 
 
-  // NOT STARTED
+  // BEFORE SCHOOL
 
   if(
 
@@ -418,301 +502,54 @@ function showSelectedDay(){
 
 
     createRectangle(
-      15,
-      80,
-      360,
+      20,
+      100,
+      350,
       120
     );
 
 
     createText(
-
-      "School not started",
-
-      20,
-
-      120,
-
-      350,
-
-      50,
-
-      24
-
+      "School\nnot started",
+      30,
+      130,
+      330,
+      60,
+      28
     );
 
 
     return;
 
+
   }
 
 
 
-  // CURRENT PERIOD FOUND
+  // CURRENT LESSON
 
-  if(currentIndex>=0){
+  if(currentIndex >= 0){
 
 
+    let current =
+    periods[currentIndex];
 
-let period = periods[currentIndex];
 
-let isBreak =
-    !period.subjectId ||
-    period.subjectId === "BREAK";
+    drawCurrent(current);
 
-let subject;
 
-if (isBreak) {
-
-    subject = {
-        longName: "BREAK",
-        abbreviation: "",
-        room: "",
-        teacher: ""
-    };
-
-} else {
-
-    subject = getSubject(period.subjectId);
-
-}
-
-
-
-    // TOP CARD
-
-    createRectangle(
-
-      15,
-
-      55,
-
-      360,
-
-      245
-
-    );
-
-
-
-    createText(
-
-      "NOW",
-
-      20,
-
-      70,
-
-      350,
-
-      25,
-
-      18
-
-    );
-
-
-
-    createText(
-
-      subject.longName,
-
-      20,
-
-      105,
-
-      350,
-
-      45,
-
-      30
-
-    );
-
-
-
-    if(SHOW_ABBREVIATION){
-
-
-      createText(
-
-        subject.abbreviation,
-
-        20,
-
-        150,
-
-        350,
-
-        25,
-
-        20
-
-      );
-
-
-    }
-
-
-
-    if(SHOW_TIME){
-
-
-      createText(
-
-        period.start+
-        " - "+
-        period.end,
-
-        20,
-
-        185,
-
-        350,
-
-        30,
-
-        18
-
-      );
-
-
-    }
-
-
-
-    if(SHOW_ROOM){
-
-
-      createText(
-
-        "Room "+subject.room,
-
-        20,
-
-        220,
-
-        350,
-
-        25,
-
-        18
-
-      );
-
-
-    }
-
-
-
-    if(SHOW_TEACHER){
-
-
-      createText(
-
-        subject.teacher,
-
-        20,
-
-        250,
-
-        350,
-
-        25,
-
-        16
-
-      );
-
-
-    }
-
-
-
-    // NEXT CARD
 
     if(
-
       SHOW_NEXT_LESSON
-
       &&
-
-      currentIndex+1 <
-      periods.length
-
+      currentIndex+1 < periods.length
     ){
 
-
-    
-   let next = periods[currentIndex + 1];
-
-let nextSubject;
-
-if (!next.subjectId || next.subjectId === "BREAK") {
-
-    nextSubject = {
-        longName: "BREAK"
-    };
-
-} else {
-
-    nextSubject = getSubject(next.subjectId);
-
-}
-
-
-
-      createRectangle(
-
-        15,
-
-        320,
-
-        360,
-
-        100
-
+      drawNext(
+        periods[currentIndex+1]
       );
-
-
-
-      createText(
-
-        "NEXT",
-
-        20,
-
-        330,
-
-        350,
-
-        20,
-
-        16
-
-      );
-
-
-
-      createText(
-
-        nextSubject.longName,
-
-        20,
-
-        360,
-
-        350,
-
-        30,
-
-        22
-
-      );
-
 
     }
-
 
 
     return;
@@ -724,11 +561,234 @@ if (!next.subjectId || next.subjectId === "BREAK") {
 
   // BREAK
 
+  drawBreak();
+
+
+
+}
+
+
+
+// =====================================================
+// CURRENT LESSON CARD
+// =====================================================
+
+function drawCurrent(period){
+
+
+  let subject;
+
+
+  if(
+    !period.subjectId
+    ||
+    period.subjectId==="BREAK"
+  ){
+
+
+    subject={
+
+      longName:"BREAK",
+
+      abbreviation:""
+
+    };
+
+
+  }
+  else{
+
+
+    subject =
+    getSubject(
+      period.subjectId
+    );
+
+
+  }
+
+
+
   createRectangle(
 
     15,
 
+    45,
+
+    360,
+
+    250
+
+  );
+
+
+
+  createAccentLine(45);
+
+
+
+  createText(
+
+    "CURRENT",
+
+    20,
+
+    65,
+
+    350,
+
+    25,
+
+    18,
+
+    COLOR_ACCENT
+
+  );
+
+
+
+  createText(
+
+    subject.longName,
+
+    20,
+
     100,
+
+    350,
+
+    50,
+
+    34
+
+  );
+
+
+
+  if(SHOW_ABBREVIATION){
+
+
+    createText(
+
+      subject.abbreviation,
+
+      20,
+
+      150,
+
+      350,
+
+      25,
+
+      20,
+
+      COLOR_GREY
+
+    );
+
+
+  }
+
+
+
+  if(SHOW_TIME){
+
+
+    createText(
+
+      period.start+
+      " - "+
+      period.end,
+
+      20,
+
+      185,
+
+      350,
+
+      30,
+
+      18
+
+    );
+
+
+  }
+
+
+
+  let remaining =
+  getRemainingMinutes(
+    period.end
+  );
+
+
+  createText(
+
+    remaining+
+    " min remaining",
+
+    20,
+
+    220,
+
+    350,
+
+    30,
+
+    20,
+
+    COLOR_GREEN
+
+  );
+
+
+
+  drawProgress(period);
+
+
+
+}
+
+
+
+// =====================================================
+// NEXT LESSON
+// =====================================================
+
+function drawNext(period){
+
+
+  let subject;
+
+
+  if(
+    !period.subjectId
+    ||
+    period.subjectId==="BREAK"
+  ){
+
+    subject={
+      longName:"BREAK"
+    };
+
+  }
+  else{
+
+    subject =
+    getSubject(
+      period.subjectId
+    );
+
+  }
+
+
+
+  createRectangle(
+
+    15,
+
+    320,
 
     360,
 
@@ -737,19 +797,40 @@ if (!next.subjectId || next.subjectId === "BREAK") {
   );
 
 
+
   createText(
 
-    "BREAK",
+    "NEXT UP",
 
     20,
 
-    130,
+    330,
 
     350,
 
-    40,
+    20,
 
-    26
+    16,
+
+    COLOR_ACCENT
+
+  );
+
+
+
+  createText(
+
+    subject.longName,
+
+    20,
+
+    360,
+
+    350,
+
+    30,
+
+    24
 
   );
 
@@ -758,9 +839,179 @@ if (!next.subjectId || next.subjectId === "BREAK") {
 
 
 
-// =====================
+// =====================================================
+// BREAK SCREEN
+// =====================================================
+
+function drawBreak(){
+
+
+  createRectangle(
+
+    20,
+
+    110,
+
+    350,
+
+    140
+
+  );
+
+
+  createAccentLine(
+
+    110,
+
+    COLOR_ORANGE
+
+  );
+
+
+  createText(
+
+    "☕ BREAK",
+
+    20,
+
+    150,
+
+    350,
+
+    40,
+
+    30,
+
+    COLOR_ORANGE
+
+  );
+
+
+}
+
+
+
+// =====================================================
+// FINISHED
+// =====================================================
+
+function drawFinished(){
+
+
+  createRectangle(
+
+    20,
+
+    120,
+
+    350,
+
+    130
+
+  );
+
+
+  createAccentLine(
+
+    120,
+
+    COLOR_GREEN
+
+  );
+
+
+  createText(
+
+    "✓ SCHOOL FINISHED",
+
+    20,
+
+    170,
+
+    350,
+
+    40,
+
+    24,
+
+    COLOR_GREEN
+
+  );
+
+
+}
+
+
+
+// =====================================================
+// PROGRESS BAR
+// =====================================================
+
+function drawProgress(period){
+
+
+  let start =
+  toMinutes(period.start);
+
+
+  let end =
+  toMinutes(period.end);
+
+
+  let now =
+  getCurrentMinutes();
+
+
+
+  let percent =
+  (now-start)/(end-start);
+
+
+
+  if(percent<0)
+    percent=0;
+
+
+  if(percent>1)
+    percent=1;
+
+
+
+  createRectangle(
+
+    35,
+
+    270,
+
+    320,
+
+    8,
+
+    0x404040
+
+  );
+
+
+  createRectangle(
+
+    35,
+
+    270,
+
+    320*percent,
+
+    8,
+
+    COLOR_GREEN
+
+  );
+
+
+}
+
+// =====================================================
 // SUBJECT LOOKUP
-// =====================
+// =====================================================
 
 function getSubject(id){
 
@@ -769,9 +1020,8 @@ function getSubject(id){
 
   timetable.timetable.subjects.find(
 
-    item=>
-
-    item.id===id
+    item =>
+    item.id === id
 
   );
 
@@ -801,9 +1051,9 @@ function getSubject(id){
 
 
 
-// =====================
-// TIME
-// =====================
+// =====================================================
+// TIME CONVERSION
+// =====================================================
 
 function toMinutes(time){
 
@@ -812,17 +1062,57 @@ function toMinutes(time){
   time.split(":");
 
 
-  return Number(parts[0])*60+
-  Number(parts[1]);
+  return (
+
+    Number(parts[0]) * 60
+
+    +
+
+    Number(parts[1])
+
+  );
 
 
 }
 
 
 
-// =====================
-// BUTTONS
-// =====================
+// =====================================================
+// REMAINING TIME
+// =====================================================
+
+function getRemainingMinutes(end){
+
+
+  let now =
+  getCurrentMinutes();
+
+
+  let finish =
+  toMinutes(end);
+
+
+  let result =
+  finish-now;
+
+
+  if(result < 0){
+
+    result=0;
+
+  }
+
+
+  return result;
+
+
+}
+
+
+
+// =====================================================
+// BUTTON CONTROLS
+// =====================================================
 
 onKey({
 
@@ -831,6 +1121,8 @@ callback:(key,event)=>{
 
   if(event===1){
 
+
+    // BACK BUTTON
 
     if(key===36){
 
@@ -847,6 +1139,8 @@ callback:(key,event)=>{
     }
 
 
+
+    // SELECT BUTTON
 
     if(key===93){
 

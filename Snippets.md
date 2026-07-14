@@ -615,3 +615,36 @@ import { setPageBrightTime } from "@zos/display";
 setPageBrightTime({
     brightTime: 2147483000
 });
+
+
+# Import image
+
+// =====================
+// SPIKE WIDGET
+// =====================
+
+let spike;
+
+
+function createSpike(x, y, size = 30) {
+
+
+  spike = hmUI.createWidget(
+    hmUI.widget.IMG,
+    {
+      x:x,
+      y:y,
+
+      w:size,
+      h:size,
+
+      src:"spike.png"
+    }
+  );
+
+
+  return spike;
+
+}
+
+put in gt.s

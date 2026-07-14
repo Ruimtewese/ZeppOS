@@ -1,7 +1,13 @@
 import * as hmUI from "@zos/ui";
+import { setPageBrightTime } from "@zos/display";
 
 Page({
   build() {
+    
+    setPageBrightTime({
+      brightTime: 100000000
+    });
+
     const WIDTH = 390;
     const HEIGHT = 450;
     const CIRCLE_SIZE = 100;

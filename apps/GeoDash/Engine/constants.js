@@ -47,10 +47,10 @@ export const PLAYER_START_Y = FLOOR_Y - PLAYER_SIZE;
 // =====================================================
 
 // Downward acceleration added every frame
-export const GRAVITY = 1.7;
+export const GRAVITY = 3;
 
 // Upward velocity when jumping
-export const JUMP_FORCE = -17;
+export const JUMP_FORCE = -25;
 
 // Automatic running speed (pixels per frame)
 export const PLAYER_SPEED = 13;
@@ -65,7 +65,15 @@ export const MAX_FALL_SPEED = 18;
 
 // Time between game updates (16ms ≈ 60 FPS)
 export const FRAME_TIME = 16;
+// =====================================================
+// DEBUG SETTINGS
+// =====================================================
 
+// Enable debug features
+export const DEBUG_MODE = true;
+
+// Automatically jump when the level starts
+export const DEBUG_AUTO_JUMP = true;
 
 // =====================================================
 // IMAGE FILES

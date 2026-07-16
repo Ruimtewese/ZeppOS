@@ -1,7 +1,11 @@
 import { createTimer } from "@zos/timer";
 import { onKey } from "@zos/interaction";
 
-import { FRAME_TIME } from "./constants.js";
+import {
+    FRAME_TIME,
+    DEBUG_MODE,
+    DEBUG_AUTO_JUMP
+} from "./constants.js";
 
 import { Player } from "../objects/player.js";
 
@@ -53,6 +57,16 @@ export class Game {
             }
 
         });
+
+        // =====================================
+        // Debug: Auto Jump
+        // =====================================
+
+        if (DEBUG_MODE && DEBUG_AUTO_JUMP) {
+
+            this.physics.jump(this.player);
+
+        }
 
         createTimer(
 
